@@ -7,19 +7,41 @@ This page is the extra detail for people changing the code.
 ## Desktop
 
 ```bash
-./build.sh          # needs javac + jar (JDK, not only a JRE)
+./build.sh          # needs Maven and JDK 11+; downloads Java dependencies
 ./run-desktop.sh
 ```
 
-`build.sh` / `build.bat` use `PATH` or `JAVA_HOME`. `uninstall.bat` still deletes `C:\AetherMind` — do not run it against this git checkout.
+`build.sh` / `build.bat` use Maven from `PATH`. The Maven shade plugin packages
+the Playwright Java dependency into the runnable `AetherMind.jar`.
+`uninstall.bat` still deletes `C:\AetherMind` — do not run it against this git checkout.
 
-If `./build.sh` says `javac` is missing:
+If `./build.sh` says a JDK is missing:
 
 ```bash
 sudo apt install openjdk-21-jdk    # Debian / Kali / Ubuntu
 ```
 
-Compile targets Java 11 (`--release 11`). The JAR includes `knowledge.json` from `shared/`.
+Compile targets Java 11. The JAR includes `knowledge.json` from `shared/`.
+Install the Playwright Chromium browser once with:
+
+```powershell
+mvn compile exec:java "-Dexec.mainClass=com.microsoft.playwright.CLI" "-Dexec.args=install chromium"
+```
+
+The browser binary is installed separately from the JAR.
+
+## Java knowledge collector
+
+Build the project, then run the collector from the repository root. Tavily is
+optional; without `TAVILY_API_KEY` the search tool uses DuckDuckGo:
+
+```powershell
+java -cp AetherMind.jar ContinuousSucker
+```
+
+It searches the configured topics immediately, saves successful results under
+`knowledge/`, and repeats every six hours. Stop it with Ctrl+C. Failed searches
+are logged rather than written as knowledge.
 
 ## Web
 

@@ -1,9 +1,16 @@
 package com.aethermind.app
 
+import android.content.Intent
 import android.os.Bundle
+import android.provider.Settings
 import android.view.KeyEvent
 import android.view.inputmethod.EditorInfo
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.biometric.BiometricManager
+import androidx.biometric.BiometricPrompt
+import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -19,12 +26,70 @@ class MainActivity : AppCompatActivity() {
     private val messages = mutableListOf<ChatMessage>()
     private lateinit var adapter: ChatAdapter
     private var restoring = false
+    private var chatInitialized = false
+    private val enrollmentLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            authenticateWithBiometrics()
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+        authenticateWithBiometrics()
+    }
 
+    private fun authenticateWithBiometrics() {
+        when (BiometricManager.from(this).canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK)) {
+            BiometricManager.BIOMETRIC_SUCCESS -> showBiometricPrompt()
+            BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> showEnrollmentRequired()
+            BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE -> showAuthenticationUnavailable(
+                getString(R.string.biometric_no_hardware)
+            )
+            BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE -> showAuthenticationUnavailable(
+                getString(R.string.biometric_hardware_unavailable),
+                retry = true
+            )
+            else -> showAuthenticationUnavailable(getString(R.string.biometric_unavailable))
+        }
+    }
+
+    private fun showBiometricPrompt() {
+        val prompt = BiometricPrompt(
+            this,
+            ContextCompat.getMainExecutor(this),
+            object : BiometricPrompt.AuthenticationCallback() {
+                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                    super.onAuthenticationSucceeded(result)
+                    initializeChat()
+                }
+
+                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                    super.onAuthenticationError(errorCode, errString)
+                    if (errorCode == BiometricPrompt.ERROR_NEGATIVE_BUTTON ||
+                        errorCode == BiometricPrompt.ERROR_USER_CANCELED ||
+                        errorCode == BiometricPrompt.ERROR_CANCELED
+                    ) {
+                        finish()
+                    } else {
+                        showAuthenticationUnavailable(errString.toString(), retry = true)
+                    }
+                }
+            }
+        )
+        val promptInfo = BiometricPrompt.PromptInfo.Builder()
+            .setTitle(getString(R.string.biometric_prompt_title))
+            .setSubtitle(getString(R.string.biometric_prompt_subtitle))
+            .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_WEAK)
+            .setNegativeButtonText(getString(R.string.biometric_cancel))
+            .build()
+        prompt.authenticate(promptInfo)
+    }
+
+    private fun initializeChat() {
+        if (chatInitialized || isFinishing) return
+        chatInitialized = true
+
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -34,6 +99,42 @@ class MainActivity : AppCompatActivity() {
         if (!restoreHistory()) {
             showBootMessages()
         }
+    }
+
+    private fun showEnrollmentRequired() {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.biometric_enrollment_title)
+            .setMessage(R.string.biometric_enrollment_message)
+            .setPositiveButton(R.string.biometric_open_settings) { _, _ ->
+                val intent = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                    Intent(Settings.ACTION_BIOMETRIC_ENROLL).putExtra(
+                        Settings.EXTRA_BIOMETRIC_AUTHENTICATORS_ALLOWED,
+                        BiometricManager.Authenticators.BIOMETRIC_WEAK
+                    )
+                } else {
+                    Intent(Settings.ACTION_SECURITY_SETTINGS)
+                }
+                enrollmentLauncher.launch(intent)
+            }
+            .setNegativeButton(R.string.biometric_exit) { _, _ -> finish() }
+            .setOnCancelListener { finish() }
+            .show()
+    }
+
+    private fun showAuthenticationUnavailable(message: String, retry: Boolean = false) {
+        val dialog = AlertDialog.Builder(this)
+            .setTitle(R.string.biometric_unavailable_title)
+            .setMessage(message)
+            .setNegativeButton(R.string.biometric_exit) { _, _ -> finish() }
+
+        if (retry) {
+            dialog.setPositiveButton(R.string.biometric_retry) { _, _ ->
+                authenticateWithBiometrics()
+            }
+        }
+
+        dialog.setOnCancelListener { finish() }
+            .show()
     }
 
     private fun setupRecyclerView() {
@@ -62,7 +163,7 @@ class MainActivity : AppCompatActivity() {
     private fun showBootMessages() {
         lifecycleScope.launch {
             delay(300)
-            addAetherMessage("⬡ AETHER MIND v0.9 — Local AI Core\nNo cloud. No API. Pure local intelligence.", animate = false)
+            addAetherMessage("⬡ AI ARHERMIND v0.9 — Local AI Core\nNo cloud. No API. Pure local intelligence.", animate = false)
             delay(600)
             addAetherMessage("Consciousness online. Type anything to begin.\nTry: hello · joke · java · life · weather", animate = false)
         }

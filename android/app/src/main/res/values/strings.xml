@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">AETHER MIND</string>
+    <string name="app_name">AI ARHERMIND</string>
     <string name="app_subtitle">v0.9 · No cloud · No API · Local AI</string>
     <string name="input_hint">Talk to Aether…</string>
     <string name="send_desc">Send message</string>
@@ -8,4 +8,16 @@
     <string name="status_online">ONLINE</string>
     <string name="status_thinking">THINKING…</string>
     <string name="status_offline">OFFLINE</string>
+    <string name="biometric_prompt_title">Unlock AI ARHERMIND</string>
+    <string name="biometric_prompt_subtitle">Use a face or other enrolled biometric</string>
+    <string name="biometric_cancel">Exit</string>
+    <string name="biometric_enrollment_title">Biometric setup required</string>
+    <string name="biometric_enrollment_message">Set up a face or other biometric in your device settings to unlock AI ARHERMIND. Your biometric data stays on your device and is never accessed by this app.</string>
+    <string name="biometric_open_settings">Open settings</string>
+    <string name="biometric_unavailable_title">Can’t unlock AI ARHERMIND</string>
+    <string name="biometric_no_hardware">This device does not have biometric hardware supported by Android.</string>
+    <string name="biometric_hardware_unavailable">Biometric hardware is temporarily unavailable.</string>
+    <string name="biometric_unavailable">No supported biometric authentication is available on this device.</string>
+    <string name="biometric_retry">Try again</string>
+    <string name="biometric_exit">Exit</string>
 </resources>

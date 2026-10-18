@@ -1,3 +1,7 @@
+import tools.BrowseTool;
+import tools.PlaywrightBrowseTool;
+import tools.WebSearchBrowseTool;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,8 +36,11 @@ public final class AetherBrain {
     private final Random rand = new Random();
 
     public static boolean isExit(String raw) {
+        if (raw == null) return false;
         String s = raw.trim().toLowerCase(Locale.ROOT);
-        return s.equals("exit") || s.equals("quit");
+        s = s.replaceAll("[^a-z0-9\\s]", "");
+        s = s.replaceAll("\\s+", " ").trim();
+        return s.equals("exit") || s.equals("quit") || s.equals("bye") || s.equals("goodbye");
     }
 
     public AetherBrain() {
@@ -48,6 +55,12 @@ public final class AetherBrain {
     }
 
     public String respond(String raw) {
+        String response = respondLocally(raw);
+        if (response != null) return response;
+        return fallbacks.get(rand.nextInt(fallbacks.size()));
+    }
+
+    public String respondLocally(String raw) {
         String lower = raw.trim().toLowerCase(Locale.ROOT);
         if (memory.size() >= MEMORY_SIZE) memory.removeFirst();
         memory.addLast(lower);
@@ -64,7 +77,19 @@ public final class AetherBrain {
             }
             return "My short-term memory is still empty.";
         }
-        return fallbacks.get(rand.nextInt(fallbacks.size()));
+        return null;
+    }
+
+    public String browse(String url) {
+        return BrowseTool.browse(url);
+    }
+
+    public String browseWithPlaywright(String url) {
+        return PlaywrightBrowseTool.browse(url);
+    }
+
+    public String webSearchAndBrowse(String query, int maxResults) {
+        return WebSearchBrowseTool.webSearchAndBrowse(query, maxResults);
     }
 
     public List<String> memorySnapshot() {

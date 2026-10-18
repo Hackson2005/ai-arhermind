@@ -15,7 +15,7 @@
         android:layout_marginStart="4dp"
         android:fontFamily="monospace"
         android:letterSpacing="0.1"
-        android:text="AETHER"
+        android:text="AI ARHERMIND"
         android:textColor="@color/cyan"
         android:textSize="10sp"
         android:textStyle="bold" />

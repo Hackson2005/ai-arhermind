@@ -3,6 +3,7 @@
 *.jar
 *.war
 hs_err_pid*
+target/
 
 # Android / Gradle
 android/.gradle/
